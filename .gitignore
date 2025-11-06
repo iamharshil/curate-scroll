@@ -39,3 +39,20 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+
+# ...existing code...
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Firebase
+firebase-debug.log
+firestore-debug.log
+
+# Expo
+.expo/
+dist/
+web-build/
