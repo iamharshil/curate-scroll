@@ -12,6 +12,72 @@ Append new entries to the top. Required fields:
 
 ---
 
+2025-11-07T01:40:00Z — Copilot
+- Summary: Implemented collapsible animated header that shrinks on scroll
+- Files changed: src/screens/FeedScreen.tsx
+- Rationale: Added scroll-responsive animated header using Animated.Value to track scroll position. Header dynamically transitions font size (18px → 14px), letter spacing (3 → 1.5), and opacity (0.9 → 0.7) as user scrolls down over 100px range. Created AnimatedHeader component with interpolated values for smooth transitions. Converted FlatList to Animated.FlatList with onScroll event handler and scrollEventThrottle of 16ms for 60fps smoothness. Header returns to full size when scrolling back to top. Uses useNativeDriver: false for layout-affecting animations. Provides immersive reading experience by minimizing header prominence during scroll while maintaining brand presence.
+- Previous state: Header was static with fixed 18px font size, 3px letter spacing, and 0.9 opacity regardless of scroll position
+
+2025-11-07T01:35:00Z — Copilot
+- Summary: Refined header typography for mature, sophisticated aesthetic
+- Files changed: src/navigation/AppNavigator.tsx
+- Rationale: Updated "CurateScroll" to "curatescroll" (lowercase) with more refined typography to match app's minimalist vibe. Changed font size from 24px to 18px for subtlety, increased letter-spacing from 1.5 to 3 for sophisticated spacing, adjusted font-weight from 300 to 500 for better legibility, and added 0.9 opacity for soft appearance. The lowercase treatment with wide spacing creates a modern, mature wordmark that aligns with the app's distraction-free philosophy.
+- Previous state: Header displayed "CurateScroll" in 24px, weight 300, letter-spacing 1.5
+
+2025-11-07T01:30:00Z — Copilot
+- Summary: Ultra-minimalist home feed with video + title only, dynamic video height
+- Files changed: src/components/feed/FeedCardItem.tsx, src/screens/FeedScreen.tsx
+- Rationale: Removed all remaining clutter (avatar, metadata, description, platform info) to achieve truly minimalist design showing only video and title. Implemented dynamic video height calculation using Dimensions.get('window').width with 16:9 aspect ratio, ensuring videos adjust perfectly to screen width. Increased spacing between items (32px margin) for breathing room. Simplified title styling to 15px regular weight with 22px line height. Removed Avatar component dependency. Added 8px top padding to feed list. Result is an ultra-clean, distraction-free viewing experience focused purely on content.
+- Previous state: Feed showed avatar, platform name, timestamp ("2h ago"), and description. Fixed video height of 220px. Cards had 12px spacing.
+
+2025-11-07T01:15:00Z — Copilot
+- Summary: Simplified UI to minimalist, distraction-free aesthetic design
+- Files changed: src/components/feed/FeedCardItem.tsx, src/navigation/AppNavigator.tsx, src/screens/SettingsScreen.tsx
+- Rationale: Removed all distracting UI elements (like/dislike/comment/share buttons, three-dot menus) to create a truly minimalist experience focused on content. Reduced avatar size to 36px, simplified metadata to just platform and time. Fixed bottom navigation cropping on iOS with proper padding (85px height, 25px bottom padding on iOS). Added custom header component with elegant, lightweight font (300 weight, 1.5px letter spacing) for "CurateScroll" branding. Completely redesigned Settings screen with profile section, organized preferences (notifications, screen time, focus mode), content settings, and comprehensive about section featuring app description and version info. All cards use rounded corners (12px) and proper spacing for clean, breathable layout.
+- Previous state: Feed cards had action buttons, three-dot menus, view counts. Navigation cropped on iOS. Settings was empty placeholder. Header used standard bold font.
+
+2025-11-07T01:00:00Z — Copilot
+- Summary: Complete UI/UX redesign with YouTube/Instagram-inspired design language
+- Files changed: src/components/feed/FeedCardItem.tsx, src/screens/FeedScreen.tsx, src/screens/SubscriptionsScreen.tsx, src/navigation/AppNavigator.tsx, src/components/common/Avatar.tsx (new), src/components/common/IconButton.tsx (new)
+- Rationale: Comprehensive redesign to match modern social media app aesthetics. FeedCardItem now features channel avatars, metadata (views/timestamps), action buttons (like/comment/share), and three-dot menus in YouTube card style. FeedScreen updated with edge-to-edge content, pull-to-refresh functionality, and removed padding for immersive experience. SubscriptionsScreen redesigned with modern search bar (rounded corners, icons), creator cards with avatars, platform badges, and subscribe buttons. Navigation updated with Ionicons, filled/outline icon states, better spacing (60px height), and cleaner labels. Created reusable Avatar and IconButton components following YouTube/Instagram design patterns.
+- Previous state: Basic list view with borders, simple text layouts, no avatars, no action buttons, standard padding throughout
+
+2025-11-07T00:30:00Z — Copilot
+- Summary: Implemented dark Material Design theme across the entire app
+- Files changed: src/config/theme.ts, App.tsx, src/navigation/AppNavigator.tsx, src/screens/FeedScreen.tsx, src/screens/SubscriptionsScreen.tsx, src/screens/SettingsScreen.tsx, src/screens/StatsScreen.tsx, src/components/feed/FeedCardItem.tsx
+- Rationale: Created comprehensive dark theme using Material Design 3 guidelines with colors for background (#121212), surface (#1E1E1E), primary (#BB86FC), secondary (#03DAC6), and proper text colors. Applied theme to all screens, navigation tabs, headers, and components. Updated StatusBar to light-content. Configured NavigationContainer with DarkTheme and styled tab bar with dark colors. All text inputs now have proper placeholder colors for dark mode visibility.
+- Previous state: App used light theme with white backgrounds, light text, and auto StatusBar
+
+2025-11-07T00:15:00Z — Copilot
+- Summary: Enhanced empty state UI in FeedScreen with structured layout and improved visual hierarchy
+- Files changed: src/screens/FeedScreen.tsx
+- Rationale: Replaced plain text empty states with structured View containers featuring emojis, titles, descriptions, and actionable hints. Added 5 new style definitions (emptyStateContainer, emptyStateIcon, emptyStateTitle, emptyStateDescription, emptyStateHint) to create professional-looking empty states for both "no subscriptions" and "no content available" scenarios. Improved user experience with clear visual feedback and next-step guidance.
+- Previous state: Empty states displayed as simple Text components without visual structure or styling
+
+2025-11-07T00:00:00Z — Copilot
+- Summary: Show YouTube player directly without thumbnail click
+- Files changed: src/components/feed/FeedCardItem.tsx
+- Rationale: Removed thumbnail click interaction and show YouTube player immediately for YouTube videos. Removed showVideo state, TouchableOpacity, and play button overlay. YouTube videos now display the embedded player directly with YouTube's native play button visible. For non-YouTube content, show thumbnail as fallback. Removed unused imports (useState, TouchableOpacity) and unused styles (thumbnailContainer, playButtonOverlay, playButton, and other unused button styles).
+- Previous state: Required clicking thumbnail with play overlay to show YouTube player
+
+2025-11-06T18:15:00Z — Copilot
+- Summary: Use proper 16:9 aspect ratio for YouTube video player
+- Files changed: src/components/feed/FeedCardItem.tsx
+- Rationale: Changed videoContainer from fixed height (225px) to aspectRatio: 16/9 for proper YouTube video dimensions. Updated YoutubePlayer height to 300 to accommodate larger container. Videos now maintain YouTube's standard 16:9 aspect ratio regardless of screen width.
+- Previous state: Fixed height of 225px that didn't maintain proper aspect ratio
+
+2025-11-06T18:10:00Z — Copilot
+- Summary: Remove custom player wrapper and show YouTube player directly
+- Files changed: src/components/feed/FeedCardItem.tsx
+- Rationale: Removed "Now Playing" header and close button wrapper. YouTube player now displays directly after clicking thumbnail with native YouTube controls and play button. Changed play prop to false so users can use YouTube's native play button. Removed unused styles (videoWrapper, videoHeader, videoHeaderText, closeVideoButton). Consolidated styling into videoContainer.
+- Previous state: Custom "Now Playing" header with close button wrapping the YouTube player
+
+2025-11-06T18:05:00Z — Copilot
+- Summary: Enable auto-play for YouTube videos when thumbnail is clicked
+- Files changed: src/components/feed/FeedCardItem.tsx
+- Rationale: Added `play={true}` prop to YoutubePlayer so videos start playing automatically when user clicks thumbnail. Removed loading state and ActivityIndicator since player handles its own loading. Removed unused loadingContainer style. Users now only need one click (on thumbnail) instead of two clicks (thumbnail + play button).
+- Previous state: Video required two clicks - one to show player, another to start playback
+
 2025-11-06T18:00:00Z — Copilot
 - Summary: Replace WebView with react-native-youtube-iframe to fix YouTube error 153
 - Files changed: src/components/feed/FeedCardItem.tsx, package.json

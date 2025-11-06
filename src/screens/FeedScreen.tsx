@@ -1,79 +1,149 @@
+import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import FeedCardItem from '../components/feed/FeedCardItem';
+import { colors } from '../config/theme';
 import cacheService from '../services/cache.service';
 import youtubeService from '../services/youtube.service';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
 import type { ContentItem } from '../types';
 
+// Animated Header Component
+const AnimatedHeader = ({ scrollY }: { scrollY: Animated.Value }) => {
+  const fontSize = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [18, 14],
+    extrapolate: 'clamp',
+  });
+
+  const letterSpacing = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [3, 1.5],
+    extrapolate: 'clamp',
+  });
+
+  const opacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0.9, 0.7],
+    extrapolate: 'clamp',
+  });
+
+  return (
+    <View style={styles.headerContainer}>
+      <Animated.Text
+        style={[
+          styles.headerTitle,
+          {
+            fontSize,
+            letterSpacing,
+            opacity,
+          },
+        ]}
+      >
+        curatescroll
+      </Animated.Text>
+    </View>
+  );
+};
+
 const FeedScreen = () => {
   const [feed, setFeed] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const subscriptions = useSubscriptionStore((state) => state.subscriptions);
+  const navigation = useNavigation();
+  const scrollY = useState(new Animated.Value(0))[0];
 
-  useEffect(() => {
-    const loadFeed = async () => {
-      try {
+  const loadFeed = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
-        setError(null);
-        const newFeed: ContentItem[] = [];
+      }
+      setError(null);
+      const newFeed: ContentItem[] = [];
 
-        console.log('📺 FeedScreen: Loading feed for subscriptions:', subscriptions);
+      console.log('📺 FeedScreen: Loading feed for subscriptions:', subscriptions);
 
-        if (subscriptions.length === 0) {
-          console.log('⚠️ No subscriptions found');
-          setFeed([]);
-          return;
-        }
+      if (subscriptions.length === 0) {
+        console.log('⚠️ No subscriptions found');
+        setFeed([]);
+        return;
+      }
 
-        for (const subscription of subscriptions) {
-          try {
-            let cachedContent = cacheService.get<ContentItem[]>(subscription.id);
+      for (const subscription of subscriptions) {
+        try {
+          let cachedContent = cacheService.get<ContentItem[]>(subscription.id);
 
-            if (!cachedContent) {
-              console.log(`🔄 Fetching videos for subscription: ${subscription.name} (${subscription.id})`);
-              if (subscription.platform === 'youtube') {
-                cachedContent = await youtubeService.fetchChannelVideos(subscription.id);
-                console.log(`✅ Got ${cachedContent?.length || 0} videos from YouTube`);
-              }
-              // Add logic for Instagram if needed
-
-              if (cachedContent) {
-                cacheService.set(subscription.id, cachedContent, 3600000); // Cache for 1 hour
-              }
-            } else {
-              console.log(`💾 Using cached content for ${subscription.name}`);
+          if (!cachedContent || isRefresh) {
+            console.log(`🔄 Fetching videos for subscription: ${subscription.name} (${subscription.id})`);
+            if (subscription.platform === 'youtube') {
+              cachedContent = await youtubeService.fetchChannelVideos(subscription.id);
+              console.log(`✅ Got ${cachedContent?.length || 0} videos from YouTube`);
             }
+            // Add logic for Instagram if needed
 
             if (cachedContent) {
-              newFeed.push(...cachedContent);
+              cacheService.set(subscription.id, cachedContent, 3600000); // Cache for 1 hour
             }
-          } catch (err) {
-            console.error(`❌ Error fetching videos for ${subscription.name}:`, err);
-            setError(`Failed to load videos for ${subscription.name}`);
+          } else {
+            console.log(`💾 Using cached content for ${subscription.name}`);
           }
-        }
 
-        console.log(`📝 Total feed items: ${newFeed.length}`);
-        setFeed(newFeed);
-      } catch (err) {
-        console.error('❌ Error loading feed:', err);
-        setError('Failed to load feed');
-      } finally {
+          if (cachedContent) {
+            newFeed.push(...cachedContent);
+          }
+        } catch (err) {
+          console.error(`❌ Error fetching videos for ${subscription.name}:`, err);
+          setError(`Failed to load videos for ${subscription.name}`);
+        }
+      }
+
+      console.log(`📝 Total feed items: ${newFeed.length}`);
+      setFeed(newFeed);
+    } catch (err) {
+      console.error('❌ Error loading feed:', err);
+      setError('Failed to load feed');
+    } finally {
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     loadFeed();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subscriptions]);
+
+  // Update navigation header on scroll
+  useEffect(() => {
+    navigation.setOptions({
+      headerStyle: {
+        backgroundColor: colors.surface,
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+      },
+      headerTitle: () => <AnimatedHeader scrollY={scrollY} />,
+    });
+  }, [navigation, scrollY]);
+
+  const onRefresh = () => {
+    loadFeed(true);
+  };
 
   return (
     <View style={styles.container}>
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading videos...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading your feed...</Text>
         </View>
       )}
       
@@ -84,18 +154,51 @@ const FeedScreen = () => {
       )}
       
       {!loading && subscriptions.length === 0 && (
-        <Text style={styles.text}>📱 Subscribe to creators in the "Add Creators" tab to see their content here.</Text>
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateIcon}>📺</Text>
+          <Text style={styles.emptyStateTitle}>No Subscriptions Yet</Text>
+          <Text style={styles.emptyStateDescription}>
+            Subscribe to your favorite creators to see their content here.
+          </Text>
+          <Text style={styles.emptyStateHint}>
+            👉 Go to the "Add Creators" tab to get started!
+          </Text>
+        </View>
       )}
       
       {!loading && feed.length === 0 && subscriptions.length > 0 && (
-        <Text style={styles.text}>⏳ No videos available for your subscriptions yet.</Text>
+        <View style={styles.emptyStateContainer}>
+          <Text style={styles.emptyStateIcon}>⏳</Text>
+          <Text style={styles.emptyStateTitle}>No Content Available</Text>
+          <Text style={styles.emptyStateDescription}>
+            Your subscriptions don't have any videos available yet.
+          </Text>
+          <Text style={styles.emptyStateHint}>
+            Check back soon or add more creators!
+          </Text>
+        </View>
       )}
       
       {!loading && feed.length > 0 && (
-        <FlatList
+        <Animated.FlatList
           data={feed}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <FeedCardItem item={item} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.feedList}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
         />
       )}
     </View>
@@ -105,12 +208,15 @@ const FeedScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
+  },
+  feedList: {
+    paddingTop: 8,
+    paddingBottom: 16,
   },
   text: {
     fontSize: 18,
-    color: '#333',
+    color: colors.text,
     textAlign: 'center',
     marginTop: 20,
   },
@@ -118,34 +224,76 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: colors.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
   },
   errorContainer: {
-    backgroundColor: '#FFE5E5',
+    backgroundColor: '#4A1F1F',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
+    margin: 16,
   },
   errorText: {
-    color: '#CC0000',
+    color: colors.error,
     fontSize: 14,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    backgroundColor: colors.background,
+  },
+  emptyStateIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 24,
+  },
+  emptyStateHint: {
+    fontSize: 14,
+    color: colors.primary,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  headerContainer: {
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontWeight: '500',
+    color: colors.text,
+    textTransform: 'lowercase',
   },
   feedItem: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
   feedTitle: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.text,
   },
   feedPlatform: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
   },
   thumbnail: {
     width: 100,

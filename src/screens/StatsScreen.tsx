@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { colors } from '../config/theme';
 
 const StatsScreen = () => {
   return (
@@ -13,11 +14,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   text: {
     fontSize: 18,
-    color: '#333',
+    color: colors.text,
   },
 });
 
