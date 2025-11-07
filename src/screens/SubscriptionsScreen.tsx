@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Avatar from '../components/common/Avatar';
 import { colors } from '../config/theme';
 import type { RootTabParamList } from '../navigation/AppNavigator';
-import instagramService from '../services/instagram.service';
 import youtubeService from '../services/youtube.service';
 import { useFeedStore } from '../stores/feedStore';
 import { useSubscriptionStore } from '../stores/subscriptionStore';
@@ -15,14 +14,37 @@ import type { ContentItem } from '../types';
 const SubscriptionsScreen = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  // In-memory cache for search results
+  const searchCache = useRef<{ [key: string]: { data: ContentItem[]; timestamp: number } }>({});
 
   const handleSearch = async () => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+    const cacheKey = query.trim().toLowerCase();
+    const now = Date.now();
+    const cached = searchCache.current[cacheKey];
+    if (cached && now - cached.timestamp < 5 * 60 * 1000) {
+      setResults(cached.data);
+      return;
+    }
     try {
+      setLoading(true);
+      console.log('Starting search for:', query);
       const youtubeResults = await youtubeService.searchChannels(query);
-      const instagramResults = await instagramService.fetchProfilePosts(query);
-      setResults([...youtubeResults, ...instagramResults]);
+      console.log('YouTube results:', youtubeResults.length);
+      
+      setResults(youtubeResults);
+      searchCache.current[cacheKey] = {
+        data: youtubeResults,
+        timestamp: now,
+      };
     } catch (error) {
       console.error('Error fetching results:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,20 +85,31 @@ const SubscriptionsScreen = () => {
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery('')}>
+            <TouchableOpacity onPress={() => { setQuery(''); setResults([]); }}>
               <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={handleSearch}
+        >
+          <Text style={styles.searchButtonText}>Search</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Results List */}
-      {results.length === 0 && !query ? (
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Searching...</Text>
+        </View>
+      ) : results.length === 0 && !query ? (
         <View style={styles.emptyState}>
           <Ionicons name="search" size={64} color={colors.textSecondary} />
           <Text style={styles.emptyTitle}>Discover Creators</Text>
           <Text style={styles.emptyDescription}>
-            Search for your favorite YouTube channels and Instagram creators
+            Search for your favorite YouTube channels
           </Text>
         </View>
       ) : (
@@ -87,37 +120,17 @@ const SubscriptionsScreen = () => {
             <TouchableOpacity 
               onPress={() => handleItemPress(item)}
               activeOpacity={0.7}
+              style={styles.resultItem}
             >
-              <View style={styles.creatorCard}>
-                <Avatar uri={item.thumbnailUrl} size={56} />
-                
-                <View style={styles.creatorInfo}>
-                  <Text style={styles.creatorName} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <View style={styles.metaRow}>
-                    <Ionicons 
-                      name={item.platform === 'youtube' ? 'logo-youtube' : 'logo-instagram'} 
-                      size={16} 
-                      color={item.platform === 'youtube' ? '#FF0000' : '#E4405F'} 
-                    />
-                    <Text style={styles.platformText}>{item.platform}</Text>
-                    <Text style={styles.subscriberCount}>• 1.2M subscribers</Text>
-                  </View>
-                  {item.description && (
-                    <Text style={styles.creatorDescription} numberOfLines={2}>
-                      {item.description}
-                    </Text>
-                  )}
-                </View>
-
-                <TouchableOpacity 
-                  style={styles.subscribeButton}
-                  onPress={() => handleItemPress(item)}
-                >
-                  <Text style={styles.subscribeButtonText}>Subscribe</Text>
-                </TouchableOpacity>
-              </View>
+              {/* Channel Thumbnail */}
+              {item.thumbnailUrl && (
+                <Avatar uri={item.thumbnailUrl} size={80} />
+              )}
+              
+              {/* Channel Name - Minimalist */}
+              <Text style={styles.channelName} numberOfLines={2}>
+                {item.title}
+              </Text>
             </TouchableOpacity>
           )}
           showsVerticalScrollIndicator={false}
@@ -138,14 +151,31 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    flexDirection: 'row',
+    gap: 8,
   },
   searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceVariant,
     borderRadius: 24,
     paddingHorizontal: 16,
     height: 44,
+  },
+  searchButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 44,
+  },
+  searchButtonText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '600',
   },
   searchIcon: {
     marginRight: 8,
@@ -175,8 +205,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 16,
+  },
   listContent: {
-    padding: 12,
+    paddingHorizontal: 0,
+    paddingTop: 16,
+  },
+  resultItem: {
+    backgroundColor: colors.background,
+    marginBottom: 32,
+    alignItems: 'center',
+  },
+  channelName: {
+    fontSize: 15,
+    color: colors.text,
+    marginTop: 16,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
   creatorCard: {
     flexDirection: 'row',
@@ -234,10 +288,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.text,
-  },
-  resultItem: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
   },
   resultText: {
     fontSize: 16,

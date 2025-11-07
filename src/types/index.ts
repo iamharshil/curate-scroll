@@ -1,4 +1,4 @@
-export type PlatformType = 'youtube' | 'instagram';
+export type PlatformType = 'youtube';
 
 export interface Subscription {
   id: string;

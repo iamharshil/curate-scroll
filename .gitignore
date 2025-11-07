@@ -56,3 +56,5 @@ firestore-debug.log
 .expo/
 dist/
 web-build/
+
+.idea

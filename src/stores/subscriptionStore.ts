@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 interface Subscription {
   id: string;
   name: string;
-  platform: 'youtube' | 'instagram';
+  platform: 'youtube';
 }
 
 interface SubscriptionStore {

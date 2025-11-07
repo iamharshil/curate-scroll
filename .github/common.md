@@ -34,10 +34,10 @@ npx expo install react-native-draggable-flatlist expo-haptics
 
 ## 🎨 Vision & Core Features
 
-**CurateScroll** is a React Native + Expo mobile app that creates a **unified, distraction-free content feed** from your favorite YouTube channels and Instagram creators.
+**CurateScroll** is a React Native + Expo mobile app that creates a **unified, distraction-free content feed** from your favorite YouTube channels.
 
 ### Core Features
-- ✅ Subscribe to YouTube channels & Instagram accounts
+- ✅ Subscribe to YouTube channels
 - ✅ Unified chronological feed (videos, shorts, reels, photos)
 - ✅ No algorithm, no recommendations
 - ✅ Offline caching with AsyncStorage
@@ -59,7 +59,7 @@ npx expo install react-native-draggable-flatlist expo-haptics
 
 ### Phase 2: Data Layer (Week 2)
 - [ ] Implement YouTube API service
-- [ ] Implement Instagram scraping service
+- [ ] Implement YouTube API improvements
 - [ ] Set up caching strategy (Firebase + AsyncStorage)
 - [ ] Build content aggregation logic
 - [ ] Add error handling & rate limiting
@@ -101,8 +101,7 @@ npx expo install react-native-draggable-flatlist expo-haptics
   "database": "Firebase Firestore (Free Tier)",
   "authentication": "Firebase Auth (Optional)",
   "apis": [
-    "YouTube Data API v3",
-    "Instagram Public Web API"
+    "YouTube Data API v3"
   ],
   "caching": "Firestore + AsyncStorage",
   "analytics": "Firebase Analytics (Optional)"
@@ -113,7 +112,6 @@ npx expo install react-native-draggable-flatlist expo-haptics
 | Service | Free Quota | Strategy |
 |---------|-----------|----------|
 | YouTube API | 10,000 units/day | Cache 1hr, max 20 channels/user |
-| Instagram | Unofficial (rate-limited) | 2-5s delays, User-Agent rotation |
 | Firebase | 50K reads/day | Global cache per creator |
 
 ---
@@ -140,7 +138,6 @@ curate-scroll/
 │   │
 │   ├── services/
 │   │   ├── youtube.service.ts    # YouTube API logic
-│   │   ├── instagram.service.ts  # Instagram scraping
 │   │   ├── cache.service.ts      # Caching strategy
 │   │   └── aggregator.service.ts # Merge & sort content
 │   │

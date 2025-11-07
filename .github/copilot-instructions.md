@@ -21,7 +21,7 @@ Keep suggestions concrete and local to this repo — reference files, patterns, 
 - Feature structure: `src/components/` (shared + feature subfolders), `src/screens/` (screen-level views), `src/navigation/` (app navigator), `src/services/` (external API wrappers / aggregator / cache), `src/stores/` (Zustand stores for app state), `src/config/` (firebase, theme, constants).
 
 ## Key integration points and data flow
-- External data is expected to come through `src/services/*` (e.g. `youtube.service.ts`, `instagram.service.ts`, `aggregator.service.ts`). These services are the single source for network calls — keep API keys and env config in `.env` (`.env.example` shows keys).
+- External data is expected to come through `src/services/*` (e.g. `youtube.service.ts`, `aggregator.service.ts`). These services are the single source for network calls — keep API keys and env config in `.env` (`.env.example` shows keys).
 - Services write/read cached responses via `cache.service.ts` and push normalized data into domain stores (e.g. `feedStore.ts`, `subscriptionStore.ts`) implemented with `zustand` in `src/stores/`.
 - UI consumes stores directly in screens/components (look under `src/screens/` and `src/components/feed/` for examples).
 
@@ -53,7 +53,7 @@ Keep suggestions concrete and local to this repo — reference files, patterns, 
 - `App.tsx` — app root and providers
 - `index.ts` — app entry
 - `src/components/common/*` — common UI building blocks
-- `src/services/*` — API/service boundaries (youtube, instagram, aggregator, cache)
+- `src/services/*` — API/service boundaries (youtube, aggregator, cache)
 - `src/stores/*` — zustand stores and domain state
 - `.env.example` — required environment variables and keys
 - `package.json` — scripts and dependency list (Expo SDK & react-native-paper are used)

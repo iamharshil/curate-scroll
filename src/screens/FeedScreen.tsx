@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import FeedCardItem from '../components/feed/FeedCardItem';
 import { colors } from '../config/theme';
@@ -54,6 +54,10 @@ const FeedScreen = () => {
   const subscriptions = useSubscriptionStore((state) => state.subscriptions);
   const navigation = useNavigation();
   const scrollY = useState(new Animated.Value(0))[0];
+  // Track previous subscriptions for cache invalidation
+  const prevSubsRef = useRef<string>('');
+
+  const getSubsKey = () => subscriptions.map((s) => s.id).sort().join(',');
 
   const loadFeed = async (isRefresh = false) => {
     try {
@@ -63,48 +67,48 @@ const FeedScreen = () => {
         setLoading(true);
       }
       setError(null);
-      const newFeed: ContentItem[] = [];
-
-      console.log('📺 FeedScreen: Loading feed for subscriptions:', subscriptions);
-
-      if (subscriptions.length === 0) {
-        console.log('⚠️ No subscriptions found');
-        setFeed([]);
+      const subsKey = getSubsKey();
+      const cacheKey = `feed:${subsKey}`;
+      const cachedFeed = cacheService.get<ContentItem[]>(cacheKey);
+      const cacheValid = cachedFeed && !isRefresh;
+      // If cache is valid and subscriptions haven't changed, use cache
+      if (cacheValid && prevSubsRef.current === subsKey) {
+        setFeed(cachedFeed);
+        setLoading(false);
+        setRefreshing(false);
         return;
       }
-
+      // Otherwise, fetch new data
+      const newFeed: ContentItem[] = [];
+      if (subscriptions.length === 0) {
+        setFeed([]);
+        prevSubsRef.current = subsKey;
+        return;
+      }
       for (const subscription of subscriptions) {
         try {
           let cachedContent = cacheService.get<ContentItem[]>(subscription.id);
-
           if (!cachedContent || isRefresh) {
-            console.log(`🔄 Fetching videos for subscription: ${subscription.name} (${subscription.id})`);
             if (subscription.platform === 'youtube') {
               cachedContent = await youtubeService.fetchChannelVideos(subscription.id);
-              console.log(`✅ Got ${cachedContent?.length || 0} videos from YouTube`);
             }
-            // Add logic for Instagram if needed
-
             if (cachedContent) {
-              cacheService.set(subscription.id, cachedContent, 3600000); // Cache for 1 hour
+              cacheService.set(subscription.id, cachedContent, 3600000); // 1 hour for per-channel cache
             }
-          } else {
-            console.log(`💾 Using cached content for ${subscription.name}`);
           }
-
           if (cachedContent) {
             newFeed.push(...cachedContent);
           }
         } catch (err) {
-          console.error(`❌ Error fetching videos for ${subscription.name}:`, err);
           setError(`Failed to load videos for ${subscription.name}`);
         }
       }
-
-      console.log(`📝 Total feed items: ${newFeed.length}`);
+      // Sort by publishedAt descending (newest first)
+      newFeed.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+      cacheService.set(cacheKey, newFeed, 24 * 60 * 60 * 1000); // 24 hours for home feed cache
       setFeed(newFeed);
+      prevSubsRef.current = subsKey;
     } catch (err) {
-      console.error('❌ Error loading feed:', err);
       setError('Failed to load feed');
     } finally {
       if (isRefresh) {

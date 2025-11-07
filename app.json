@@ -13,7 +13,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iamharshil.curatescroll"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,13 +22,20 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [],
+      "package": "com.iamharshil.curatescroll"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "react-native-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ece89f76-bb73-48ac-9d7e-5f7abfcc383a"
+      }
+    }
   }
 }

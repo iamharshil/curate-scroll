@@ -3,7 +3,7 @@ import { create } from 'zustand';
 interface ContentItem {
   id: string;
   title: string;
-  platform: 'youtube' | 'instagram';
+  platform: 'youtube';
   publishedAt: string;
 }
 

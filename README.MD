@@ -20,7 +20,7 @@ npx expo run:android
 
 ## 📱 Features
 
-- ✅ Subscribe to YouTube channels & Instagram accounts
+- ✅ Subscribe to YouTube channels
 - ✅ Unified chronological feed
 - ✅ No algorithm, no recommendations
 - ✅ Anti-doom scrolling tools
